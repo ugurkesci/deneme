@@ -7,15 +7,16 @@ This file provides guidance to AI assistants (Claude and others) working within 
 ## Repository Overview
 
 **Repository:** `ugurkesci/deneme`
-**Status:** New / Empty — no source files have been committed yet.
+**Maintainer:** `ugurkesci`
+**Status:** Active development — update this file as the project grows.
 
-This CLAUDE.md will evolve as the project grows. Sections marked **(TBD)** should be filled in once the project structure is established.
+> Sections marked **(TBD)** should be filled in once the project structure is established.
 
 ---
 
 ## Project Structure (TBD)
 
-Once files are added, document the top-level layout here. Example:
+Once files are added, document the top-level layout here:
 
 ```
 /
@@ -30,10 +31,12 @@ Once files are added, document the top-level layout here. Example:
 
 ## Tech Stack (TBD)
 
-- **Language:** _e.g., TypeScript, Python, Go_
-- **Framework:** _e.g., React, FastAPI, Gin_
-- **Database:** _e.g., PostgreSQL, SQLite_
-- **Package manager:** _e.g., npm, pip, cargo_
+| Concern | Choice |
+|---------|--------|
+| Language | _e.g., TypeScript, Python, Go_ |
+| Framework | _e.g., React, FastAPI, Gin_ |
+| Database | _e.g., PostgreSQL, SQLite_ |
+| Package manager | _e.g., npm, pip, cargo_ |
 
 ---
 
@@ -41,14 +44,11 @@ Once files are added, document the top-level layout here. Example:
 
 ### Getting Started
 
-> Fill in setup commands once the project has dependencies.
-
 ```bash
-# Example — replace with real commands
-git clone <repo-url>
+git clone https://github.com/ugurkesci/deneme.git
 cd deneme
-# install dependencies
-# run the project
+# install dependencies — fill in once known
+# run the project   — fill in once known
 ```
 
 ### Running Tests (TBD)
@@ -74,9 +74,9 @@ cd deneme
 ## Git Conventions
 
 - **Branch naming:** `feature/<short-description>`, `fix/<short-description>`, `chore/<short-description>`
-- **Commit style:** Use imperative mood, present tense — _"Add login endpoint"_ not _"Added login endpoint"_
-- **Commit scope:** Keep commits focused; one logical change per commit
-- **Pull requests:** Squash-and-merge preferred; include a clear PR description
+- **Commit style:** Imperative mood, present tense — _"Add login endpoint"_ not _"Added login endpoint"_
+- **Commit scope:** One logical change per commit; keep commits focused
+- **Pull requests:** Squash-and-merge preferred; write a clear PR description
 
 ### Branch Strategy
 
@@ -94,24 +94,24 @@ cd deneme
 ### General
 
 - Prefer clarity over cleverness
-- Avoid premature abstractions — wait until a pattern repeats at least three times before extracting it
-- Delete dead code rather than commenting it out
+- Avoid premature abstractions — extract a pattern only after it repeats at least three times
+- Delete dead code; do not comment it out
 - Keep functions small and single-purpose
 
 ### Naming
 
 - Use descriptive names; avoid single-letter variables except in short, obvious loops
-- Be consistent: if the codebase uses `camelCase` for variables, don't introduce `snake_case`
+- Stay consistent — if the codebase uses `camelCase`, don't introduce `snake_case`
 
 ### Comments
 
 - Write comments for *why*, not *what*
 - Do not add comments that merely restate the code
-- Keep comments up to date — stale comments are worse than no comments
+- Keep comments current — stale comments are worse than none
 
 ### Error Handling
 
-- Handle errors at the appropriate level; don't swallow them silently
+- Handle errors at the appropriate level; never swallow them silently
 - Validate at system boundaries (user input, external APIs); trust internal invariants
 
 ---
@@ -129,34 +129,43 @@ Once tests are set up, document:
 
 ## Environment Variables (TBD)
 
-Document required environment variables and where to find/set them:
-
 | Variable | Description | Required |
 |----------|-------------|----------|
 | _(none yet)_ | | |
 
-Use a `.env.example` file to document all required variables without exposing secrets.
+Keep a `.env.example` file in the repo with all required variable names (no real values) so new contributors know what to set up.
 
 ---
 
 ## AI Assistant Guidelines
 
-When working in this repository, AI assistants should:
+When working in this repository, AI assistants (including Claude) **must**:
 
-1. **Read before writing** — always read a file before editing it; never modify code you haven't seen
-2. **Stay minimal** — only change what is necessary to complete the task; avoid unsolicited refactoring
-3. **No over-engineering** — don't add error handling, abstractions, or feature flags for hypothetical scenarios
+1. **Read before writing** — always read a file in full before editing it; never modify code you haven't seen
+2. **Stay minimal** — only change what is necessary to complete the task; avoid unsolicited refactoring or cleanup
+3. **No over-engineering** — don't add error handling, abstractions, or feature flags for hypothetical future scenarios
 4. **No new files unless necessary** — prefer editing existing files over creating new ones
 5. **Respect existing style** — match the formatting, naming, and structure already present in the file being edited
 6. **Security awareness** — never introduce command injection, XSS, SQL injection, or other OWASP Top 10 vulnerabilities
 7. **Commit hygiene** — use clear, imperative-mood commit messages; reference issue numbers where relevant
 8. **Ask when uncertain** — if the task is ambiguous or requires a significant architectural decision, ask before implementing
+9. **No stale TODOs** — don't leave `// TODO` comments or placeholder code; complete the task or note the blocker explicitly
+
+### Claude Code Specifics
+
+- This project uses [Claude Code](https://claude.ai/code) for AI-assisted development
+- Update this CLAUDE.md whenever the project structure, tech stack, or conventions change significantly
+- Prefer small, reviewable commits over large, sweeping changes
 
 ---
 
 ## CI / CD (TBD)
 
-Document the pipeline once it is configured (GitHub Actions, GitLab CI, etc.).
+Document the pipeline once configured (GitHub Actions, GitLab CI, etc.):
+
+- Trigger conditions (push, PR, schedule)
+- Steps: lint → test → build → deploy
+- Required secrets / environment variables
 
 ---
 
