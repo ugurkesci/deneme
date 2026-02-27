@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeskFlow — Prototip</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0f172a;
+    --surface:  #1e293b;
+    --border:   #334155;
+    --muted:    #475569;
+    --text:     #f1f5f9;
+    --sub:      #94a3b8;
+    --primary:  #6366f1;
+    --primary-h:#4f46e5;
+    --green:    #22c55e;
+    --yellow:   #eab308;
+    --red:      #ef4444;
+    --orange:   #f97316;
+    --blue:     #3b82f6;
+    --radius:   8px;
+    --sidebar:  240px;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ── AUTH ── */
+  .auth-wrap { width: 100%; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px; width: 380px; }
+  .brand { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 24px; letter-spacing: -0.5px; }
+  .brand span { color: var(--text); }
+  .auth-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .auth-sub { color: var(--sub); font-size: 14px; margin-bottom: 28px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--sub); margin-bottom: 6px; }
+  input[type=email], input[type=password], input[type=text], textarea, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 12px; color: var(--text); font-size: 14px; outline: none; transition: border .2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+  .field { margin-bottom: 16px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background .2s, opacity .2s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-h); }
+  .btn-ghost { background: transparent; color: var(--sub); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); color: var(--text); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-full { width: 100%; justify-content: center; }
+  .auth-footer { margin-top: 20px; text-align: center; font-size: 13px; color: var(--sub); }
+  .auth-footer a { color: var(--primary); cursor: pointer; text-decoration: none; }
+
+  /* ── APP SHELL ── */
+  .app-shell { display: flex; width: 100%; }
+  .sidebar { width: var(--sidebar); background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; display: flex; flex-direction: column; min-height: 100vh; flex-shrink: 0; }
+  .sidebar-brand { padding: 0 20px 20px; font-size: 18px; font-weight: 700; color: var(--primary); border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .sidebar-brand span { color: var(--text); }
+  .nav-section { padding: 8px 12px 4px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 14px; color: var(--sub); cursor: pointer; border-radius: 0; transition: all .15s; }
+  .nav-item:hover { background: rgba(99,102,241,.1); color: var(--text); }
+  .nav-item.active { background: rgba(99,102,241,.15); color: var(--primary); font-weight: 500; border-right: 2px solid var(--primary); }
+  .nav-item .icon { width: 16px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+  .user-pill { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .user-pill .info { flex: 1; min-width: 0; }
+  .user-pill .name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-pill .role-tag { font-size: 11px; color: var(--sub); }
+  .logout-btn { font-size: 12px; color: var(--muted); cursor: pointer; }
+  .logout-btn:hover { color: var(--red); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .page-title { font-size: 16px; font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .notif-btn { position: relative; background: none; border: none; color: var(--sub); cursor: pointer; font-size: 18px; padding: 4px; }
+  .notif-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--surface); }
+  .content { padding: 28px; flex: 1; overflow: auto; }
+
+  /* ── CARDS / STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .stat-label { font-size: 13px; color: var(--sub); margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-delta { font-size: 12px; color: var(--sub); margin-top: 4px; }
+  .stat-delta.up { color: var(--green); }
+  .stat-delta.dn { color: var(--red); }
+
+  /* ── TABLE ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 11px 16px; text-align: left; color: var(--sub); font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,.15); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-open     { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge-progress { background: rgba(234,179,8,.15); color: var(--yellow); }
+  .badge-resolved { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-closed   { background: rgba(100,116,139,.15); color: var(--sub); }
+  .badge-waiting  { background: rgba(249,115,22,.15); color: var(--orange); }
+  .badge-admin    { background: rgba(99,102,241,.15); color: var(--primary); }
+  .badge-agent    { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge-customer { background: rgba(34,197,94,.15); color: var(--green); }
+  .prio { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+  .prio-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .prio-critical .prio-dot { background: var(--red); }
+  .prio-high     .prio-dot { background: var(--orange); }
+  .prio-medium   .prio-dot { background: var(--yellow); }
+  .prio-low      .prio-dot { background: var(--blue); }
+  .link { color: var(--primary); cursor: pointer; text-decoration: none; font-weight: 500; }
+  .link:hover { text-decoration: underline; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-bar input, .filter-bar select { width: auto; min-width: 0; }
+  .filter-bar input[type=text] { flex: 1; min-width: 200px; }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap input { padding-left: 32px; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: 14px; }
+
+  /* ── TICKET DETAIL ── */
+  .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+  .detail-main { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .detail-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .ticket-id { font-size: 12px; color: var(--sub); margin-bottom: 6px; }
+  .ticket-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .ticket-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .detail-body { padding: 24px; }
+  .desc-text { color: var(--sub); line-height: 1.7; font-size: 14px; margin-bottom: 24px; }
+  .comments-section { border-top: 1px solid var(--border); padding-top: 20px; }
+  .section-label { font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 16px; }
+  .comment { display: flex; gap: 12px; margin-bottom: 20px; }
+  .comment-body { flex: 1; }
+  .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .comment-author { font-size: 13px; font-weight: 600; }
+  .comment-time { font-size: 12px; color: var(--sub); }
+  .comment-text { font-size: 14px; color: var(--sub); line-height: 1.6; }
+  .internal-note { background: rgba(234,179,8,.06); border: 1px solid rgba(234,179,8,.2); border-radius: var(--radius); padding: 10px 14px; }
+  .internal-badge { font-size: 10px; background: rgba(234,179,8,.15); color: var(--yellow); padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .comment-form { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 8px; }
+  textarea { resize: vertical; min-height: 90px; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+  /* ── SIDEBAR PANEL (right) ── */
+  .side-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .side-panel h3 { font-size: 13px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 16px; }
+  .side-field { margin-bottom: 16px; }
+  .side-field label { font-size: 12px; color: var(--sub); display: block; margin-bottom: 5px; }
+  .side-field select, .side-field .value-text { font-size: 13px; }
+  .value-text { color: var(--text); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .activity-item { display: flex; gap: 8px; margin-bottom: 12px; font-size: 12px; color: var(--sub); }
+  .activity-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; }
+
+  /* ── DASHBOARD CHARTS (fake) ── */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 20px; }
+  .chart-placeholder { height: 200px; position: relative; overflow: hidden; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100%; padding: 0 8px; }
+  .bar { flex: 1; background: var(--primary); border-radius: 4px 4px 0 0; opacity: .8; transition: opacity .2s; min-width: 0; }
+  .bar:hover { opacity: 1; }
+  .donut-wrap { display: flex; align-items: center; justify-content: center; height: 100%; }
+  .donut { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(var(--blue) 0% 38%, var(--yellow) 38% 65%, var(--green) 65% 85%, var(--muted) 85% 100%); position: relative; }
+  .donut::after { content: ''; position: absolute; inset: 28px; background: var(--surface); border-radius: 50%; }
+  .legend { margin-left: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); margin-bottom: 8px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 440px; max-width: 95vw; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+  .breadcrumb .sep { color: var(--border); }
+  .breadcrumb a { color: var(--sub); cursor: pointer; }
+  .breadcrumb a:hover { color: var(--primary); }
+
+  /* ── MISC ── */
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
+  .flex { display: flex; }
+  .gap-2 { gap: 8px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .text-sm { font-size: 13px; }
+  .text-sub { color: var(--sub); }
+  .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: var(--border); color: var(--sub); margin-right: 4px; }
+  .screen-nav { display: flex; gap: 6px; background: var(--bg); padding: 10px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .screen-nav button { padding: 5px 12px; border-radius: 6px; font-size: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--sub); cursor: pointer; }
+  .screen-nav button:hover { border-color: var(--primary); color: var(--primary); }
+  .screen-nav button.cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .demo-banner { background: rgba(99,102,241,.1); border-bottom: 1px solid rgba(99,102,241,.2); padding: 8px 16px; font-size: 12px; color: var(--primary); text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     DEMO NAV (tüm ekranlar arası geçiş)
+════════════════════════════════════════════════════ -->
+<div class="demo-banner">🎨 Prototip — Gerçek veri yok, sadece görsel tasarım testi</div>
+<div class="screen-nav" id="demónav">
+  <button onclick="go('login')" id="btn-login">1. Giriş</button>
+  <button onclick="go('dashboard')" id="btn-dashboard">2. Dashboard</button>
+  <button onclick="go('tickets')" id="btn-tickets">3. Talep Listesi</button>
+  <button onclick="go('detail')" id="btn-detail">4. Talep Detayı</button>
+  <button onclick="go('users')" id="btn-users">5. Kullanıcı Yönetimi</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     EKRAN 1 — GİRİŞ
+════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-login">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand">Desk<span>Flow</span></div>
+      <div class="auth-title">Tekrar hoş geldiniz</div>
+      <div class="auth-sub">Hesabınıza giriş yapın</div>
+      <div class="field">
+        <label>E-posta adresi</label>
+        <input type="email" placeholder="ornek@sirket.com" value="admin@acme.com" />
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input type="password" value="••••••••" />
+      </div>
+      <div class="flex items-center justify-between text-sm" style="margin-bottom:20px">
+        <label style="display:flex;align-items:center;gap:6px;color:var(--sub);font-size:13px;cursor:pointer">
+          <input type="checkbox" checked /> Beni hatırla
+        </label>
+        <a class="link" style="font-size:13px">Şifremi unuttum</a>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="go('dashboard')">Giriş Yap</button>
+      <div class="auth-footer">Hesabınız yok mu? <a onclick="go('dashboard')">Kayıt olun</a></div>
+      <div style="margin-top:20px;padding:12px;background:rgba(99,102,241,.08);border-radius:8px;font-size:12px;color:var(--sub)">
+        <strong style="color:var(--text)">Demo hesaplar:</strong><br/>
+        admin@acme.com &nbsp;·&nbsp; agent@acme.com &nbsp;·&nbsp; musteri@acme.com
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     EKRAN 2 — DASHBOARD
+════════════════════════════════════════════════════ -->
+<div class="screen" id="s-dashboard">
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">Desk<span>Flow</span></div>
+      <div class="nav-section">Genel</div>
+      <div class="nav-item active"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item" onclick="go('tickets')"><span class="icon">🎫</span> Talepler <span style="margin-left:auto;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">12</span></div>
+      <div class="nav-item"><span class="icon">🔔</span> Bildirimler</div>
+      <div class="nav-section">Yönetim</div>
+      <div class="nav-item" onclick="go('users')"><span class="icon">👥</span> Kullanıcılar</div>
+      <div class="nav-item"><span class="icon">🏷️</span> Kategoriler</div>
+      <div class="nav-item"><span class="icon">📋</span> Audit Log</div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="avatar" style="background:rgba(99,102,241,.3);color:var(--primary)">YK</div>
+          <div class="info">
+            <div class="name">Yılmaz Kaya</div>
+            <div class="role-tag">Admin</div>
+          </div>
+          <span class="logout-btn" onclick="go('login')" title="Çıkış">⏻</span>
+        </div>
+      </div>
+    </nav>
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title">Dashboard</div>
+        <div class="topbar-right">
+          <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+          <button class="btn btn-primary" onclick="openModal()">+ Yeni Talep</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Açık Talepler</div>
+            <div class="stat-value" style="color:var(--blue)">47</div>
+            <div class="stat-delta up">↑ 8 bu hafta</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Kritik Öncelik</div>
+            <div class="stat-value" style="color:var(--red)">6</div>
+            <div class="stat-delta dn">↑ 2 bu hafta</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Bana Atanan</div>
+            <div class="stat-value" style="color:var(--yellow)">13</div>
+            <div class="stat-delta">değişmedi</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Bu Ay Çözülen</div>
+            <div class="stat-value" style="color:var(--green)">124</div>
+            <div class="stat-delta up">↑ %18 geçen aya göre</div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Son 7 Gün — Talep Trendi</div>
+            </div>
+            <div style="padding:16px">
+              <div class="chart-placeholder">
+                <div class="bar-chart">
+                  <div class="bar" style="height:55%"  title="Pzt: 11"></div>
+                  <div class="bar" style="height:70%"  title="Sal: 14"></div>
+                  <div class="bar" style="height:45%"  title="Çar: 9"></div>
+                  <div class="bar" style="height:90%"  title="Per: 18"></div>
+                  <div class="bar" style="height:60%"  title="Cum: 12"></div>
+                  <div class="bar" style="height:30%"  title="Cmt: 6"></div>
+                  <div class="bar" style="height:40%"  title="Paz: 8"></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub);padding:0 8px;margin-top:8px">
+                <span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Durum Dağılımı</div></div>
+            <div style="padding:16px">
+              <div class="chart-placeholder">
+                <div class="donut-wrap">
+                  <div class="donut"></div>
+                  <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Açık (38%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> İşlemde (27%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Çözüldü (20%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div> Kapalı (15%)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-6">
+          <div class="card-header">
+            <div class="card-title">Son Talepler</div>
+            <button class="btn btn-ghost" onclick="go('tickets')" style="padding:6px 12px;font-size:12px">Tümünü Gör</button>
+          </div>
+          <table>
+            <thead><tr><th>#</th><th>Başlık</th><th>Durum</th><th>Öncelik</th><th>Atanan</th><th>Tarih</th></tr></thead>
+            <tbody>
+              <tr><td>#1042</td><td><a class="link" onclick="go('detail')">Ödeme sayfası yüklenmüyor</a></td><td><span class="badge badge-progress">İşlemde</span></td><td><span class="prio prio-critical"><span class="prio-dot"></span>Kritik</span></td><td>Ayşe D.</td><td>27 Şub</td></tr>
+              <tr><td>#1041</td><td><a class="link" onclick="go('detail')">Fatura PDF indirme hatası</a></td><td><span class="badge badge-open">Açık</span></td><td><span class="prio prio-high"><span class="prio-dot"></span>Yüksek</span></td><td>—</td><td>26 Şub</td></tr>
+              <tr><td>#1040</td><td><a class="link" onclick="go('detail')">Şifre sıfırlama maili gelmiyor</a></td><td><span class="badge badge-resolved">Çözüldü</span></td><td><span class="prio prio-medium"><span class="prio-dot"></span>Orta</span></td><td>Mehmet A.</td><td>25 Şub</td></tr>
+              <tr><td>#1039</td><td><a class="link" onclick="go('detail')">Kullanıcı profili güncellenmiyor</a></td><td><span class="badge badge-waiting">Müşteri Bekl.</span></td><td><span class="prio prio-low"><span class="prio-dot"></span>Düşük</span></td><td>Ayşe D.</td><td>24 Şub</td></tr>
+              <tr><td>#1038</td><td><a class="link" onclick="go('detail')">Rapor dışa aktarma 500 hatası</a></td><td><span class="badge badge-closed">Kapalı</span></td><td><span class="prio prio-high"><span class="prio-dot"></span>Yüksek</span></td><td>Mehmet A.</td><td>23 Şub</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     EKRAN 3 — TALEP LİSTESİ
+════════════════════════════════════════════════════ -->
+<div class="screen" id="s-tickets">
+  <div class="app-shell">
+    <nav class="sidebar">
+      <div class="sidebar-brand">Desk<span>Flow</span></div>
+      <div class="nav-section">Genel</div>
+      <div class="nav-item" onclick="go('dashboard')"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item active"><span class="icon">🎫</span> Talepler <span style="margin-left:auto;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">12</span></div>
+      <div class="nav-item"><span class="icon">🔔</span> Bildirimler</div>
+      <div class="nav-section">Yönetim</div>
+      <div class="nav-item" onclick="go('users')"><span class="icon">👥</span> Kullanıcılar</div>
+      <div class="nav-item"><span class="icon">🏷️</span> Kategoriler</div>
+      <div class="nav-item"><span class="icon">📋</span> Audit Log</div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="avatar" style="background:rgba(99,102,241,.3);color:var(--primary)">YK</div>
+          <div class="info"><div class="name">Yılmaz Kaya</div><div class="role-tag">Admin</div></div>
+          <span class="logout-btn" onclick="go('login')" title="Çıkış">⏻</span>
+        </div>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title">Talepler</div>
+        <div class="topbar-right">
+          <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+          <button class="btn btn-primary" onclick="openModal()">+ Yeni Talep</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Talep ara…" value="" />
+          </div>
+          <select>
+            <option>Tüm Durumlar</option>
+            <option>Açık</option>
+            <option>İşlemde</option>
+            <option>Müşteri Bekl.</option>
+            <option>Çözüldü</option>
+            <option>Kapalı</option>
+          </select>
+          <select>
+            <option>Tüm Öncelikler</option>
+            <option>Kritik</option>
+            <option>Yüksek</option>
+            <option>Orta</option>
+            <option>Düşük</option>
+          </select>
+          <select>
+            <option>Tüm Kategoriler</option>
+            <option>Ödeme</option>
+            <option>Hesap</option>
+            <option>Teknik</option>
+          </select>
+          <select>
+            <option>Atanan: Hepsi</option>
+            <option>Bana atanan</option>
+            <option>Ayşe D.</option>
+            <option>Mehmet A.</option>
+          </select>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Başlık</th><th>Durum</th><th>Öncelik</th>
+                <th>Kategori</th><th>Oluşturan</th><th>Atanan</th><th>Tarih ↓</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>#1042</td><td><a class="link" onclick="go('detail')">Ödeme sayfası yüklenmüyor</a></td><td><span class="badge badge-progress">İşlemde</span></td><td><span class="prio prio-critical"><span class="prio-dot"></span>Kritik</span></td><td>Ödeme</td><td>Can Y.</td><td>Ayşe D.</td><td>27 Şub 14:22</td></tr>
+              <tr><td>#1041</td><td><a class="link" onclick="go('detail')">Fatura PDF indirme hatası</a></td><td><span class="badge badge-open">Açık</span></td><td><span class="prio prio-high"><span class="prio-dot"></span>Yüksek</span></td><td>Ödeme</td><td>Zeynep K.</td><td>—</td><td>26 Şub 09:15</td></tr>
+              <tr><td>#1040</td><td><a class="link" onclick="go('detail')">Şifre sıfırlama maili gelmiyor</a></td><td><span class="badge badge-resolved">Çözüldü</span></td><td><span class="prio prio-medium"><span class="prio-dot"></span>Orta</span></td><td>Hesap</td><td>Ali R.</td><td>Mehmet A.</td><td>25 Şub 17:08</td></tr>
+              <tr><td>#1039</td><td><a class="link" onclick="go('detail')">Kullanıcı profili güncellenmiyor</a></td><td><span class="badge badge-waiting">Müşteri Bekl.</span></td><td><span class="prio prio-low"><span class="prio-dot"></span>Düşük</span></td><td>Hesap</td><td>Selin M.</td><td>Ayşe D.</td><td>24 Şub 11:33</td></tr>
+              <tr><td>#1038</td><td><a class="link" onclick="go('detail')">Rapor dışa aktarma 500 hatası</a></td><td><span class="badge badge-closed">Kapalı</span></td><td><span class="prio prio-high"><span class="prio-dot"></span>Yüksek</span></td><td>Teknik</td><td>Burak T.</td><td>Mehmet A.</td><td>23 Şub 16:45</td></tr>
+              <tr><td>#1037</td><td><a class="link" onclick="go('detail')">Mobil uygulama çöküyor</a></td><td><span class="badge badge-progress">İşlemde</span></td><td><span class="prio prio-critical"><span class="prio-dot"></span>Kritik</span></td><td>Teknik</td><td>Mert B.</td><td>Ayşe D.</td><td>22 Şub 10:12</td></tr>
+              <tr><td>#1036</td><td><a class="link" onclick="go('detail')">E-posta bildirimleri gecikiyor</a></td><td><span class="badge badge-open">Açık</span></td><td><span class="prio prio-medium"><span class="prio-dot"></span>Orta</span></td><td>Hesap</td><td>Fatma S.</td><td>—</td><td>21 Şub 08:55</td></tr>
+              <tr><td>#1035</td><td><a class="link" onclick="go('detail')">Arama sonuçları yanlış sıralı</a></td><td><span class="badge badge-resolved">Çözüldü</span></td><td><span class="prio prio-low"><span class="prio-dot"></span>Düşük</span></td><td>Teknik</td><td>Emre C.</td><td>Mehmet A.</td><td>20 Şub 13:30</td></tr>
+            </tbody>
+          </table>
+          <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--sub)">
+            <span>Toplam 87 talep · 1-8 gösteriliyor</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px">← Önceki</button>
+              <button class="btn btn-primary" style="padding:5px 10px;font-size:12px">1</button>
+              <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px">2</button>
+              <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px">3</button>
+              <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px">Sonraki →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     EKRAN 4 — TALEP DETAYI
+════════════════════════════════════════════════════ -->
+<div class="screen" id="s-detail">
+  <div class="app-shell">
+    <nav class="sidebar">
+      <div class="sidebar-brand">Desk<span>Flow</span></div>
+      <div class="nav-section">Genel</div>
+      <div class="nav-item" onclick="go('dashboard')"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item active" onclick="go('tickets')"><span class="icon">🎫</span> Talepler</div>
+      <div class="nav-item"><span class="icon">🔔</span> Bildirimler</div>
+      <div class="nav-section">Yönetim</div>
+      <div class="nav-item" onclick="go('users')"><span class="icon">👥</span> Kullanıcılar</div>
+      <div class="nav-item"><span class="icon">🏷️</span> Kategoriler</div>
+      <div class="nav-item"><span class="icon">📋</span> Audit Log</div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="avatar" style="background:rgba(99,102,241,.3);color:var(--primary)">YK</div>
+          <div class="info"><div class="name">Yılmaz Kaya</div><div class="role-tag">Admin</div></div>
+          <span class="logout-btn" onclick="go('login')" title="Çıkış">⏻</span>
+        </div>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title">Talep Detayı</div>
+        <div class="topbar-right">
+          <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="breadcrumb">
+          <a onclick="go('tickets')">Talepler</a>
+          <span class="sep">›</span>
+          <span>#1042 — Ödeme sayfası yüklenmüyor</span>
+        </div>
+        <div class="detail-layout">
+          <!-- Sol: ana içerik -->
+          <div class="detail-main">
+            <div class="detail-header">
+              <div class="ticket-id">#1042 · Ödeme · 27 Şub 2026</div>
+              <div class="ticket-title">Ödeme sayfası yüklenmüyor</div>
+              <div class="ticket-meta">
+                <span class="badge badge-progress">İşlemde</span>
+                <span class="prio prio-critical"><span class="prio-dot"></span>Kritik</span>
+                <span class="tag">ödeme</span>
+                <span class="tag">frontend</span>
+              </div>
+            </div>
+            <div class="detail-body">
+              <p class="desc-text">Merhaba, checkout sayfasına geçmeye çalıştığımda sayfa tamamen boş geliyor. Sepetimde 3 ürün var ve ödeme adımına tıklayınca hiçbir şey yüklenmiyor. Tarayıcı konsolunda şu hata var:<br/><br/><code style="background:var(--bg);padding:8px 12px;border-radius:6px;font-size:12px;display:block;color:var(--orange)">Uncaught TypeError: Cannot read properties of undefined (reading 'price') at CheckoutPage.jsx:142</code><br/>Chrome 122 kullanıyorum, mobilde de aynı sorun var.</p>
+
+              <div class="comments-section">
+                <div class="section-label">Yorumlar (3)</div>
+
+                <div class="comment">
+                  <div class="avatar" style="background:rgba(59,130,246,.2);color:var(--blue)">AD</div>
+                  <div class="comment-body">
+                    <div class="comment-header">
+                      <span class="comment-author">Ayşe Demir</span>
+                      <span class="badge badge-agent" style="font-size:10px">Agent</span>
+                      <span class="comment-time">27 Şub 15:10</span>
+                    </div>
+                    <div class="comment-text">Merhaba, sorununuzu aldık. CheckoutPage bileşenini inceliyorum. Bir saat içinde geri dönüş yapacağım. Bu süreçte başka bir tarayıcıda denemenizi önerir miyim?</div>
+                  </div>
+                </div>
+
+                <div class="comment">
+                  <div class="avatar" style="background:rgba(234,179,8,.2);color:var(--yellow)">AD</div>
+                  <div class="comment-body internal-note">
+                    <div class="comment-header">
+                      <span class="comment-author">Ayşe Demir</span>
+                      <span class="internal-badge">İç Not</span>
+                      <span class="comment-time">27 Şub 15:45</span>
+                    </div>
+                    <div class="comment-text">Sorunu buldum: son deploy'da cart store'daki `items` prop nullable yapıldı ama CheckoutPage bunu handle etmiyor. PR #387 hazır, review bekliyor.</div>
+                  </div>
+                </div>
+
+                <div class="comment">
+                  <div class="avatar" style="background:rgba(34,197,94,.2);color:var(--green)">CY</div>
+                  <div class="comment-body">
+                    <div class="comment-header">
+                      <span class="comment-author">Can Yılmaz</span>
+                      <span class="badge badge-customer" style="font-size:10px">Müşteri</span>
+                      <span class="comment-time">27 Şub 16:20</span>
+                    </div>
+                    <div class="comment-text">Firefox ile de denedim, aynı sorun. Ne zaman düzelebilir acaba? Ödememi tamamlamam gerekiyor.</div>
+                  </div>
+                </div>
+
+                <div class="comment-form">
+                  <div class="section-label">Yanıt Ekle</div>
+                  <textarea placeholder="Yanıtınızı yazın… Markdown desteklenir."></textarea>
+                  <div class="form-actions">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);cursor:pointer;margin-right:auto">
+                      <input type="checkbox" /> İç not olarak işaretle
+                    </label>
+                    <button class="btn btn-ghost">İptal</button>
+                    <button class="btn btn-primary">Yorum Gönder</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sağ: meta panel -->
+          <div>
+            <div class="side-panel">
+              <h3>Talep Bilgileri</h3>
+              <div class="side-field">
+                <label>Durum</label>
+                <select>
+                  <option>İşlemde</option>
+                  <option>Açık</option>
+                  <option>Müşteri Bekl.</option>
+                  <option>Çözüldü</option>
+                  <option>Kapalı</option>
+                </select>
+              </div>
+              <div class="side-field">
+                <label>Öncelik</label>
+                <select>
+                  <option>Kritik</option>
+                  <option>Yüksek</option>
+                  <option>Orta</option>
+                  <option>Düşük</option>
+                </select>
+              </div>
+              <div class="side-field">
+                <label>Atanan</label>
+                <select>
+                  <option>Ayşe Demir</option>
+                  <option>Mehmet Akar</option>
+                  <option>Atanmamış</option>
+                </select>
+              </div>
+              <div class="side-field">
+                <label>Kategori</label>
+                <select>
+                  <option>Ödeme</option>
+                  <option>Hesap</option>
+                  <option>Teknik</option>
+                </select>
+              </div>
+              <hr class="divider" />
+              <h3>Meta</h3>
+              <div class="side-field">
+                <label>Oluşturan</label>
+                <div class="value-text flex items-center gap-2">
+                  <div class="avatar" style="width:22px;height:22px;font-size:10px;background:rgba(34,197,94,.2);color:var(--green)">CY</div>
+                  Can Yılmaz
+                </div>
+              </div>
+              <div class="side-field">
+                <label>Oluşturulma</label>
+                <div class="value-text text-sm text-sub">27 Şub 2026, 14:22</div>
+              </div>
+              <div class="side-field">
+                <label>Son Güncelleme</label>
+                <div class="value-text text-sm text-sub">27 Şub 2026, 16:20</div>
+              </div>
+              <hr class="divider" />
+              <h3>Aktivite</h3>
+              <div class="activity-item"><div class="activity-icon">📝</div><span><b>Can Y.</b> talep oluşturdu · 14:22</span></div>
+              <div class="activity-item"><div class="activity-icon">👤</div><span><b>Yılmaz K.</b> Ayşe D.'ye atadı · 15:05</span></div>
+              <div class="activity-item"><div class="activity-icon">🔄</div><span>Durum Açık → İşlemde · 15:10</span></div>
+              <div class="activity-item"><div class="activity-icon">💬</div><span><b>Ayşe D.</b> yorum ekledi · 15:10</span></div>
+              <div class="activity-item"><div class="activity-icon">💬</div><span><b>Can Y.</b> yanıt verdi · 16:20</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     EKRAN 5 — KULLANICI YÖNETİMİ
+════════════════════════════════════════════════════ -->
+<div class="screen" id="s-users">
+  <div class="app-shell">
+    <nav class="sidebar">
+      <div class="sidebar-brand">Desk<span>Flow</span></div>
+      <div class="nav-section">Genel</div>
+      <div class="nav-item" onclick="go('dashboard')"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item" onclick="go('tickets')"><span class="icon">🎫</span> Talepler</div>
+      <div class="nav-item"><span class="icon">🔔</span> Bildirimler</div>
+      <div class="nav-section">Yönetim</div>
+      <div class="nav-item active"><span class="icon">👥</span> Kullanıcılar</div>
+      <div class="nav-item"><span class="icon">🏷️</span> Kategoriler</div>
+      <div class="nav-item"><span class="icon">📋</span> Audit Log</div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="avatar" style="background:rgba(99,102,241,.3);color:var(--primary)">YK</div>
+          <div class="info"><div class="name">Yılmaz Kaya</div><div class="role-tag">Admin</div></div>
+          <span class="logout-btn" onclick="go('login')" title="Çıkış">⏻</span>
+        </div>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title">Kullanıcı Yönetimi</div>
+        <div class="topbar-right">
+          <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+          <button class="btn btn-primary" onclick="openInviteModal()">+ Kullanıcı Davet Et</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Ad veya e-posta ara…" />
+          </div>
+          <select>
+            <option>Tüm Roller</option>
+            <option>Admin</option>
+            <option>Agent</option>
+            <option>Customer</option>
+          </select>
+          <select>
+            <option>Tüm Durumlar</option>
+            <option>Aktif</option>
+            <option>Askıya Alındı</option>
+          </select>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Durum</th><th>Son Giriş</th><th>Eylemler</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="background:rgba(99,102,241,.2);color:var(--primary)">YK</div><span>Yılmaz Kaya</span></div></td>
+                <td class="text-sub">yilmaz@acme.com</td>
+                <td><span class="badge badge-admin">Admin</span></td>
+                <td><span style="color:var(--green);font-size:12px">● Aktif</span></td>
+                <td class="text-sub text-sm">Şimdi</td>
+                <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px">Düzenle</button></td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="background:rgba(59,130,246,.2);color:var(--blue)">AD</div><span>Ayşe Demir</span></div></td>
+                <td class="text-sub">ayse@acme.com</td>
+                <td><span class="badge badge-agent">Agent</span></td>
+                <td><span style="color:var(--green);font-size:12px">● Aktif</span></td>
+                <td class="text-sub text-sm">27 Şub 11:00</td>
+                <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px">Düzenle</button></td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="background:rgba(59,130,246,.2);color:var(--blue)">MA</div><span>Mehmet Akar</span></div></td>
+                <td class="text-sub">mehmet@acme.com</td>
+                <td><span class="badge badge-agent">Agent</span></td>
+                <td><span style="color:var(--green);font-size:12px">● Aktif</span></td>
+                <td class="text-sub text-sm">27 Şub 09:30</td>
+                <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px">Düzenle</button></td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="background:rgba(34,197,94,.2);color:var(--green)">CY</div><span>Can Yılmaz</span></div></td>
+                <td class="text-sub">can@musteri.com</td>
+                <td><span class="badge badge-customer">Customer</span></td>
+                <td><span style="color:var(--green);font-size:12px">● Aktif</span></td>
+                <td class="text-sub text-sm">27 Şub 14:10</td>
+                <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px">Düzenle</button></td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="background:rgba(100,116,139,.2);color:var(--sub)">ZK</div><span>Zeynep Kurt</span></div></td>
+                <td class="text-sub">zeynep@musteri.com</td>
+                <td><span class="badge badge-customer">Customer</span></td>
+                <td><span style="color:var(--muted);font-size:12px">● Askıda</span></td>
+                <td class="text-sub text-sm">15 Şub 08:00</td>
+                <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px">Düzenle</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding:14px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--sub)">
+            5 kullanıcı · 4 aktif, 1 askıda
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL — Yeni Talep
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-ticket">
+  <div class="modal">
+    <div class="modal-title">Yeni Talep Oluştur</div>
+    <div class="field">
+      <label>Başlık</label>
+      <input type="text" placeholder="Sorunuzu kısaca özetleyin" />
+    </div>
+    <div class="field">
+      <label>Kategori</label>
+      <select><option>Kategori Seçin</option><option>Ödeme</option><option>Hesap</option><option>Teknik</option></select>
+    </div>
+    <div class="field">
+      <label>Öncelik</label>
+      <select><option>Orta</option><option>Düşük</option><option>Yüksek</option><option>Kritik</option></select>
+    </div>
+    <div class="field">
+      <label>Açıklama</label>
+      <textarea placeholder="Sorunuzu detaylı açıklayın…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="closeModal()">Talebi Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — Kullanıcı Davet -->
+<div class="modal-overlay" id="modal-invite">
+  <div class="modal">
+    <div class="modal-title">Kullanıcı Davet Et</div>
+    <div class="field">
+      <label>E-posta adresi</label>
+      <input type="email" placeholder="kullanici@sirket.com" />
+    </div>
+    <div class="field">
+      <label>Rol</label>
+      <select><option>Agent</option><option>Admin</option><option>Customer</option></select>
+    </div>
+    <div style="padding:12px;background:rgba(99,102,241,.08);border-radius:8px;font-size:13px;color:var(--sub);margin-bottom:8px">
+      Kullanıcıya davet e-postası gönderilecek. 48 saat içinde kabul etmesi gerekir.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeInviteModal()">İptal</button>
+      <button class="btn btn-primary" onclick="closeInviteModal()">Davet Gönder</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const screens = { login:'s-login', dashboard:'s-dashboard', tickets:'s-tickets', detail:'s-detail', users:'s-users' };
+
+  function go(name) {
+    Object.values(screens).forEach(id => { document.getElementById(id).classList.remove('active'); });
+    document.getElementById(screens[name]).classList.add('active');
+    Object.keys(screens).forEach(k => { document.getElementById('btn-'+k)?.classList.remove('cur'); });
+    document.getElementById('btn-'+name)?.classList.add('cur');
+    window.scrollTo(0,0);
+  }
+
+  function openModal()       { document.getElementById('modal-ticket').classList.add('open'); }
+  function closeModal()      { document.getElementById('modal-ticket').classList.remove('open'); }
+  function openInviteModal() { document.getElementById('modal-invite').classList.add('open'); }
+  function closeInviteModal(){ document.getElementById('modal-invite').classList.remove('open'); }
+
+  // overlay tıklama ile kapat
+  document.getElementById('modal-ticket').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('modal-invite').addEventListener('click', e => { if(e.target===e.currentTarget) closeInviteModal(); });
+
+  go('login');
+</script>
+</body>
+</html>
